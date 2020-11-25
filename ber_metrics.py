@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.spatial import distance
+from scipy.spatial import distance, KDTree
 
 
 class BEREstimator:
@@ -67,4 +67,29 @@ class BEREstimator:
         b_dist = first_term + second_term
         return np.exp(-b_dist) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
+    def nn_bound(self, test_x, test_y):
+        """
+        Calculate the BER upper bound estimate using the nearest neighbor method.
+        Currently only supports 0/1 binary class.
 
+        Equations from Tumer and Ghosh (2003) and also referencing Ryan Holbrook's
+        implementations at:
+        https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
+
+        Parameters
+        ----------
+            x: numpy array
+                Each row should be one data point, and each column represents a
+                feature. This represents the test set dataset, which will be
+                assigned labels.
+
+            y: numpy array
+                This array should have length equal to the number of rows in
+                `x`. Each entry should be 0 or 1. This represents the true
+                labels of the test set dataset.
+        """
+        tree = KDTree(self.x)
+        _, closest_idx = tree.query(test_x)
+        predict_y = self.y[closest_idx]
+        err = (predict_y != test_y) / len(test_y)
+        return err
