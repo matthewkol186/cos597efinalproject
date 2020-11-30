@@ -24,6 +24,9 @@ class BEREstimator:
         """
         self.x = x
         self.y = y
+        mu = self.x.mean(axis=0) # mean of each feature
+        std = self.x.std(axis=0) # std of each feature
+        self.x = (self.x - mu) / std # standardize feature scale
         self.subgroups = subgroups # not currently used
 
     def mahalanobis_bound(self):
@@ -64,11 +67,16 @@ class BEREstimator:
         sigma_1 = np.cov(self.x[self.y == 1, :].T)
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
-        second_term = (1/2) * np.log(np.linalg.det(sigma) / np.sqrt(np.linalg.det(sigma_0) * np.linalg.det(sigma_1)))
+        # rewrite to try to escape floating point errors
+        second_term = (1/2) * (
+            np.log(np.linalg.det(sigma)) -
+            0.5 * np.log(np.abs(np.linalg.det(sigma_0))) -
+            0.5 * np.log(np.abs(np.linalg.det(sigma_1)))
+        )
         b_dist = first_term + second_term
         return np.exp(-b_dist) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
-    def nn_bound(self):
+    def nn_bound(self, leafsize=100):
         """
         Calculate the BER upper bound estimate using the nearest neighbor method.
         Currently only supports 0/1 binary class.
@@ -77,7 +85,7 @@ class BEREstimator:
         implementations at:
         https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
         """
-        tree = KDTree(self.x)
+        tree = KDTree(self.x, leafsize=100)
         # we know the closest will be the data point itself, so return
         # 2 nearest neighbors
         _, closest_idx = tree.query(self.x, k=2)
