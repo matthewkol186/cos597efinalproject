@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import distance, KDTree
+from pyitlib import discrete_random_variable as drv
 
 
 class BEREstimator:
@@ -84,3 +85,35 @@ class BEREstimator:
         predict_y = self.y[closest_idx]
         err = (predict_y != self.y).sum() / len(self.y)
         return err
+
+    def ensemble_bound(self, individual_predictions):
+        """
+        Estimate the BER using the Mutual Information-Based Correlation in
+        Tumer and Ghosh (2003).
+
+        Parameters
+        ----------
+            individual_predictions: numpy array
+                The dimensions of this array should be |M| by |E|, where
+                |M| is the number of labeled data points and |E| is the number
+                of individual classifiers. Each element should be a probability
+                (not a 0/1 prediction).)
+        """
+        avg_predictor = individual_predictions.mean(axis=1).round()
+        individual_predictions = individual_predictions.round() # deal with 0/1 predictions
+        N = individual_predictions.shape[1]  # number of classifiers in ensemble
+        labels = np.repeat(self.y.reshape(-1, 1), N, axis=1)
+        accs = (individual_predictions == labels).mean(axis=0) # mean accuracy for each classifier
+        mean_err = 1 - accs.mean() # mean accuracy for all classifiers
+        ensemble_err = 1 - (self.y == avg_predictor).mean()
+
+        # calculate dual total correlation for individual & ensemble classifiers
+        dual_total_corr = drv.information_binding(individual_predictions.T, base=np.e)
+        # total entropy in the individual classifiers
+        total_entropy = drv.entropy_joint(individual_predictions.T, base=np.e)
+        # delta is the normalized dual total correlation
+        delta = dual_total_corr / total_entropy
+        # formula from Tumer and Ghosh
+        be = (N * ensemble_err - ((N - 1) * delta + 1) * mean_err ) / ((N - 1) * (1 - delta))
+        return be
+
