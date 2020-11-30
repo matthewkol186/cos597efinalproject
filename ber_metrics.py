@@ -103,13 +103,18 @@ class BEREstimator:
         individual_predictions = individual_predictions.round() # deal with 0/1 predictions
         N = individual_predictions.shape[1]  # number of classifiers in ensemble
         labels = np.repeat(self.y.reshape(-1, 1), N, axis=1)
-        accs = (individual_predictions == labels).mean(axis=0) # mean accuracy for each classifier
+        accs = np.equal(individual_predictions, labels).mean(axis=0) # mean accuracy for each classifier
         mean_err = 1 - accs.mean() # mean err for all classifiers
         ensemble_err = 1 - (self.y == avg_predictor).mean() # mean err for ensemble classifier
 
         # calculate average mutual information between each individual classifier's
         # predictions and the ensemble predictor
-        ami = drv.information_mutual(individual_predictions.T, avg_predictor.reshape(1, -1), base=np.e).mean()
+        ami = drv.information_mutual(
+            individual_predictions.T,
+            avg_predictor.reshape(1, -1),
+            base=np.e,
+            cartesian_product=True
+        ).mean()
         # total entropy in the individual classifiers
         total_entropy = drv.entropy_joint(individual_predictions.T, base=np.e)
         # delta is the normalized ami
