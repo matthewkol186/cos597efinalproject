@@ -86,7 +86,7 @@ class BEREstimator:
         err = (predict_y != self.y).sum() / len(self.y)
         return err
 
-    def ensemble_bound(self, individual_predictions):
+    def mi_ensemble_bound(self, individual_predictions):
         """
         Estimate the BER using the Mutual Information-Based Correlation in
         Tumer and Ghosh (2003).
@@ -104,15 +104,18 @@ class BEREstimator:
         N = individual_predictions.shape[1]  # number of classifiers in ensemble
         labels = np.repeat(self.y.reshape(-1, 1), N, axis=1)
         accs = (individual_predictions == labels).mean(axis=0) # mean accuracy for each classifier
-        mean_err = 1 - accs.mean() # mean accuracy for all classifiers
-        ensemble_err = 1 - (self.y == avg_predictor).mean()
+        mean_err = 1 - accs.mean() # mean err for all classifiers
+        ensemble_err = 1 - (self.y == avg_predictor).mean() # mean err for ensemble classifier
 
-        # calculate dual total correlation for individual & ensemble classifiers
-        dual_total_corr = drv.information_binding(individual_predictions.T, base=np.e)
+        # calculate average mutual information between each individual classifier's
+        # predictions and the ensemble predictor
+        ami = drv.information_mutual(individual_predictions.T, avg_predictor.reshape(1, -1), base=np.e).mean()
         # total entropy in the individual classifiers
         total_entropy = drv.entropy_joint(individual_predictions.T, base=np.e)
-        # delta is the normalized dual total correlation
-        delta = dual_total_corr / total_entropy
+        # delta is the normalized ami
+        delta = ami / total_entropy
+        assert delta >= 0
+        assert delta <= 1
         # formula from Tumer and Ghosh
         be = (N * ensemble_err - ((N - 1) * delta + 1) * mean_err ) / ((N - 1) * (1 - delta))
         return be
