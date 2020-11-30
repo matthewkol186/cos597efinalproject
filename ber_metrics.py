@@ -27,6 +27,12 @@ class BEREstimator:
         mu = self.x.mean(axis=0) # mean of each feature
         std = self.x.std(axis=0) # std of each feature
         self.x = (self.x - mu) / std # standardize feature scale
+        # preprocess y labels to 0 and 1
+        possible_labels = np.unique(self.y)
+        if len(possible_labels) > 2:
+            raise RuntimeError("BER can only be estimated on binary classification tasks. Ensure that there are only two labels.")
+        self.y[y == possible_labels[0]] = 0
+        self.y[y == possible_labels[1]] = 1
         self.subgroups = subgroups # not currently used
 
     def mahalanobis_bound(self):
