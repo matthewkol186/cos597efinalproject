@@ -115,6 +115,9 @@ class BEREstimator:
             base=np.e,
             cartesian_product=True
         ).mean()
+        # TODO: should we measure total entropy by discretizing the classification
+        # probabilities into more granular bins? Currently we just use the
+        # 0 / 1 matrix
         # total entropy in the individual classifiers
         total_entropy = drv.entropy_joint(individual_predictions.T, base=np.e)
         # delta is the normalized ami
