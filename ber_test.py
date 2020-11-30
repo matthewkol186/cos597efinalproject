@@ -28,6 +28,8 @@ individual_predictions = np.array(
 ).T
 print("Mutual information-based correlation ensemble bound:", ber.mi_ensemble_bound(individual_predictions))
 
+print("Plurality ensemble bound:", ber.plurality_ensemble_bound(individual_predictions))
+
 # the first bhattacharyya bound was 0; I wanted a larger number to verify
 # approximate equality between R package and our package
 x = np.random.normal(size=(200, 2))
