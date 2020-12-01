@@ -4,10 +4,11 @@ from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
 
 
-def log_det_svd(m, eps=1e-3):
+def log_det_svd(m, perc_energy=0.9):
     """
     Calculates the log of the determinant. Uses SVD to remove singular
-    values very close to zero.
+    values that are "irrelevant"; that is, we keep enough singular
+    values to make up 90% of the energy in sigma.
 
     Parameters
     ----------
@@ -18,7 +19,12 @@ def log_det_svd(m, eps=1e-3):
             Singular values under this value will be removed
     """
     s = np.linalg.svd(m)[1]
-    return np.log(np.prod(s[np.abs(s) > eps]))
+    s_sq = np.power(s, 2)
+    cumulative_energy = np.cumsum(s_sq)
+    # keep indices with
+    num_to_keep = (cumulative_energy <= perc_energy * s_sq.sum()).sum() + 1
+    import pdb; pdb.set_trace()
+    return np.log(np.prod(s[:num_to_keep]))
 
 class BEREstimator:
     def __init__(self, x, y, subgroups=None):
