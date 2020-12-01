@@ -52,7 +52,7 @@ class BEREstimator:
         mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
         sigma_0 = np.cov(self.x[self.y == 0, :].T)
         sigma_1 = np.cov(self.x[self.y == 1, :].T)
-        sigma_inv = np.linalg.inv(sigma_0 * p_0 + sigma_1 * p_1)
+        sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
         m_dist = distance.mahalanobis(mu_0, mu_1, sigma_inv) ** 2
         return 2 * p_0 * p_1 / (1 + p_0 * p_1 * m_dist)
 
