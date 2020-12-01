@@ -75,12 +75,9 @@ class BEREstimator:
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
         # rewrite to try to escape floating point errors
-        second_term = (1/2) * (
-            np.log(np.linalg.det(sigma)) -
-            0.5 * np.log(np.abs(np.linalg.det(sigma_0))) -
-            0.5 * np.log(np.abs(np.linalg.det(sigma_1)))
-        )
-        return np.exp(-first_term) * np.exp(-second_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
+        second_term = 0.5 * np.linalg.slogdet(sigma)[1] # get the log of absolute value of determinant
+        third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
+        return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
     def nn_bound(self, leafsize=100):
         """
