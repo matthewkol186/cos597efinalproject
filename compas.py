@@ -16,6 +16,12 @@ X_violent, y_violent = violent.drop(['violent'], axis=1), violent['violent']
 
 X_train, X_test, y_train, y_test = train_test_split(X_arrest, y_arrest, test_size=0.33)
 pickle.dump([X_train, y_train, X_test, y_test], open('Data/compas/processed_arrest.pkl', 'wb'))
+X_train = X_train.drop(labels=['age_geq_46', 'race_is_other'], axis=1)
+X_test = X_test.drop(labels=['age_geq_46', 'race_is_other'], axis=1)
+pickle.dump([X_train, y_train, X_test, y_test], open('Data/compas/processed_arrest_nonsingular.pkl', 'wb'))
 
 X_train, X_test, y_train, y_test = train_test_split(X_violent, y_violent, test_size=0.33)
 pickle.dump([X_train, y_train, X_test, y_test], open('Data/compas/processed_violent.pkl', 'wb'))
+X_train = X_train.drop(labels=['age_geq_46', 'race_is_other'], axis=1)
+X_test = X_test.drop(labels=['age_geq_46', 'race_is_other'], axis=1)
+pickle.dump([X_train, y_train, X_test, y_test], open('Data/compas/processed_violent_nonsingular.pkl', 'wb'))
