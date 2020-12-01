@@ -80,8 +80,7 @@ class BEREstimator:
             0.5 * np.log(np.abs(np.linalg.det(sigma_0))) -
             0.5 * np.log(np.abs(np.linalg.det(sigma_1)))
         )
-        b_dist = first_term + second_term
-        return np.exp(-b_dist) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
+        return np.exp(-first_term) * np.exp(-second_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
     def nn_bound(self, leafsize=100):
         """
@@ -93,6 +92,7 @@ class BEREstimator:
         https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
         """
         x = np.ascontiguousarray(self.x.astype('float32'))
+        index = faiss.IndexFlatL2(x.shape[1])
         index.add(x)
         _, I = index.search(x, k=2)
         closest_idx = I[:, 1].reshape(-1)
