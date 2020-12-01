@@ -79,7 +79,7 @@ class BEREstimator:
         third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
         return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
-    def nn_bound(self, leafsize=100):
+    def nn_bound(self):
         """
         Calculate the BER upper bound estimate using the nearest neighbor method.
         Currently only supports 0/1 binary class.
