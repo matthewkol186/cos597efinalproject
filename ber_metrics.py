@@ -1,3 +1,4 @@
+import faiss
 import numpy as np
 from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
@@ -91,11 +92,10 @@ class BEREstimator:
         implementations at:
         https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
         """
-        tree = KDTree(self.x, leafsize=100)
-        # we know the closest will be the data point itself, so return
-        # 2 nearest neighbors
-        _, closest_idx = tree.query(self.x, k=2)
-        closest_idx = closest_idx[:, 1].reshape(-1)
+        x = np.ascontiguousarray(self.x.astype('float32'))
+        index.add(x)
+        _, I = index.search(x, k=2)
+        closest_idx = I[:, 1].reshape(-1)
         predict_y = self.y[closest_idx]
         err = (predict_y != self.y).sum() / len(self.y)
         return err
