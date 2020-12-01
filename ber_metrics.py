@@ -4,6 +4,22 @@ from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
 
 
+def log_det_svd(m, eps=1e-3):
+    """
+    Calculates the log of the determinant. Uses SVD to remove singular
+    values very close to zero.
+
+    Parameters
+    ----------
+        m: numpy array
+            Matrix whose determinant is being calculated
+
+        eps: float (optional)
+            Singular values under this value will be removed
+    """
+    s = np.linalg.svd(m)[1]
+    return np.log(np.prod(s[np.abs(s) > eps]))
+
 class BEREstimator:
     def __init__(self, x, y, subgroups=None):
         """
@@ -56,7 +72,7 @@ class BEREstimator:
         m_dist = distance.mahalanobis(mu_0, mu_1, sigma_inv) ** 2
         return 2 * p_0 * p_1 / (1 + p_0 * p_1 * m_dist)
 
-    def bhattacharyya_bound(self):
+    def bhattacharyya_bound(self, eps=1e-5):
         """
         Calculate the BER upper bound estimate using the Bhattacharrya bound
         between instances in class 0 and class 1.
@@ -75,8 +91,8 @@ class BEREstimator:
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
         # rewrite to try to escape floating point errors
-        second_term = 0.5 * np.linalg.slogdet(sigma)[1] # get the log of absolute value of determinant
-        third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
+        second_term = 0.5 * log_det_svd(sigma) # get the log of absolute value of determinant
+        third_term = -0.25 * (log_det_svd(sigma_0) + log_det_svd(sigma_1))
         return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
     def nn_bound(self):
