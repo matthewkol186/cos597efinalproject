@@ -29,7 +29,7 @@ class Ensemble:
         if self.version == 2:
             self.model = BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num'])
         if self.version == 3:
-            self.model = BaggingClassifer(base_estimator=SVC(class_weight='balanced'), n_estimators=self.params['svm_num'])
+            self.model = BaggingClassifier(base_estimator=SVC(class_weight='balanced'), n_estimators=self.params['svm_num'])
         elif self.version == 4:
             #self.model = StackingClassifier(estimators=[BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
             #        RandomForestClassifier(n_estimators=self.params['rf_num'], class_weight='balanced'),
