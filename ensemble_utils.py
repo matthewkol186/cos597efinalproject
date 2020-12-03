@@ -23,7 +23,7 @@ class Ensemble:
         if 'svm_num' not in params.keys():
             params['svm_num'] = 3
         if 'rbf_num' not in params.keys():
-            params['svm_num'] = 5
+            params['rbf_num'] = 5
         self.params = params
 
         if self.version == 0:
@@ -93,7 +93,7 @@ class Ensemble:
         return np.array(predictions).T
 
     # returns one prediction per sample of aggregated ensembles
-    def test_agg(self, X):
+    def test_agg(self, X, disagg=False):
         if self.version in [0, 1, 2, 3, 4]:
             return self.model.predict(X)
         else:
@@ -101,6 +101,8 @@ class Ensemble:
             for i, model in enumerate(self.model):
                 predictions.append(model.predict(X))
 
+            if disagg:
+                return np.array(predictions).T, self.combiner.predict(np.array(predictions).T)
             return self.combiner.predict(np.array(predictions).T)
 
 
