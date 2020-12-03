@@ -21,7 +21,7 @@ class Ensemble:
         if 'mlp_num' not in params.keys():
             params['mlp_num'] = 5
         if 'svm_num' not in params.keys():
-            params['svm_num'] = 5
+            params['svm_num'] = 3
         if 'rbf_num' not in params.keys():
             params['svm_num'] = 5
         self.params = params
@@ -77,6 +77,18 @@ class Ensemble:
             for model in self.model:
                 for estimator in model.estimators_:
                     predictions.append(estimator.predict(X))
+
+        return np.array(predictions).T
+
+    def test_proba(self, X):
+        probabilities = []
+        if self.version in [0, 1, 2, 3, 4]:
+            for estimator in self.model.estimators_:
+                predictions.append(estimator.predict_proba(X))
+        elif self.version in [5]:
+            for model in self.model:
+                for estimator in model.estimators_:
+                    predictions.append(estimator.predict_proba(X))
 
         return np.array(predictions).T
 
