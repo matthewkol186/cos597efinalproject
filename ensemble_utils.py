@@ -81,7 +81,7 @@ class Ensemble:
         return np.array(predictions).T
 
     def test_proba(self, X):
-        probabilities = []
+        predictions = []
         if self.version in [0, 1, 2, 3, 4]:
             for estimator in self.model.estimators_:
                 predictions.append(estimator.predict_proba(X))
