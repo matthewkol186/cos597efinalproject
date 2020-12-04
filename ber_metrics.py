@@ -10,6 +10,8 @@ def log_det_svd(m, perc_energy=0.9):
     values that are "irrelevant"; that is, we keep enough singular
     values to make up 90% of the energy in sigma.
 
+    ** NOT CURRENTLY USED **
+
     Parameters
     ----------
         m: numpy array
@@ -23,7 +25,6 @@ def log_det_svd(m, perc_energy=0.9):
     cumulative_energy = np.cumsum(s_sq)
     # keep indices with
     num_to_keep = (cumulative_energy <= perc_energy * s_sq.sum()).sum() + 1
-    import pdb; pdb.set_trace()
     return np.log(np.prod(s[:num_to_keep]))
 
 class BEREstimator:
@@ -49,7 +50,7 @@ class BEREstimator:
         self.y = y
         mu = self.x.mean(axis=0) # mean of each feature
         std = self.x.std(axis=0) # std of each feature
-        self.x = (self.x - mu) / std # standardize feature scale
+        self.x = (self.x[:, std > 0] - mu[std > 0]) / std[std > 0] # standardize feature scale, remove features with no variation
         # preprocess y labels to 0 and 1
         possible_labels = np.unique(self.y)
         if len(possible_labels) > 2:
@@ -74,7 +75,12 @@ class BEREstimator:
         mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
         sigma_0 = np.cov(self.x[self.y == 0, :].T)
         sigma_1 = np.cov(self.x[self.y == 1, :].T)
-        sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        sigma_inv = None
+        try:
+            sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        except np.linalg.LinAlgError:
+            sigma_inv = np.linalg.inv(sigma_0 * p_0 + sigma_1 * p_1)
+
         m_dist = distance.mahalanobis(mu_0, mu_1, sigma_inv) ** 2
         return 2 * p_0 * p_1 / (1 + p_0 * p_1 * m_dist)
 
@@ -97,8 +103,8 @@ class BEREstimator:
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
         # rewrite to try to escape floating point errors
-        second_term = 0.5 * log_det_svd(sigma) # get the log of absolute value of determinant
-        third_term = -0.25 * (log_det_svd(sigma_0) + log_det_svd(sigma_1))
+        second_term = 0.5 * np.linalg.slogdet(sigma)[1] # get the log of absolute value of determinant
+        third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
         return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
 
     def nn_bound(self):
