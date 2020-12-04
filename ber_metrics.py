@@ -4,6 +4,29 @@ from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
 
 
+def log_det_svd(m, perc_energy=0.9):
+    """
+    Calculates the log of the determinant. Uses SVD to remove singular
+    values that are "irrelevant"; that is, we keep enough singular
+    values to make up 90% of the energy in sigma.
+
+    ** NOT CURRENTLY USED **
+
+    Parameters
+    ----------
+        m: numpy array
+            Matrix whose determinant is being calculated
+
+        eps: float (optional)
+            Singular values under this value will be removed
+    """
+    s = np.linalg.svd(m)[1]
+    s_sq = np.power(s, 2)
+    cumulative_energy = np.cumsum(s_sq)
+    # keep indices with
+    num_to_keep = (cumulative_energy <= perc_energy * s_sq.sum()).sum() + 1
+    return np.log(np.prod(s[:num_to_keep]))
+
 class BEREstimator:
     def __init__(self, x, y, subgroups=None):
         """
@@ -27,7 +50,7 @@ class BEREstimator:
         self.y = y
         mu = self.x.mean(axis=0) # mean of each feature
         std = self.x.std(axis=0) # std of each feature
-        self.x = (self.x - mu) / std # standardize feature scale
+        self.x = (self.x[:, std > 0] - mu[std > 0]) / std[std > 0] # standardize feature scale, remove features with no variation
         # preprocess y labels to 0 and 1
         possible_labels = np.unique(self.y)
         if len(possible_labels) > 2:
@@ -52,11 +75,16 @@ class BEREstimator:
         mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
         sigma_0 = np.cov(self.x[self.y == 0, :].T)
         sigma_1 = np.cov(self.x[self.y == 1, :].T)
-        sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        sigma_inv = None
+        try:
+            sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        except np.linalg.LinAlgError:
+            sigma_inv = np.linalg.inv(sigma_0 * p_0 + sigma_1 * p_1)
+
         m_dist = distance.mahalanobis(mu_0, mu_1, sigma_inv) ** 2
         return 2 * p_0 * p_1 / (1 + p_0 * p_1 * m_dist)
 
-    def bhattacharyya_bound(self):
+    def bhattacharyya_bound(self, eps=1e-5):
         """
         Calculate the BER upper bound estimate using the Bhattacharrya bound
         between instances in class 0 and class 1.
