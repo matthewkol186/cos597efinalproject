@@ -65,7 +65,7 @@ class Ensemble:
             assert NotImplementedError
 
     def train(self, X, y):
-        if self.version in [5, 6]:
+        if self.version in [5, 6, 7]:
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.33)
 
             for i, model in enumerate(self.model):
@@ -85,7 +85,7 @@ class Ensemble:
         if self.version in [0, 1, 2, 3, 4]:
             for estimator in self.model.estimators_:
                 predictions.append(estimator.predict(X))
-        elif self.version in [5, 6]:
+        elif self.version in [5, 6, 7]:
             for model in self.model:
                 for estimator in model.estimators_:
                     predictions.append(estimator.predict(X))
@@ -97,7 +97,7 @@ class Ensemble:
         if self.version in [0, 1, 2, 3, 4]:
             for estimator in self.model.estimators_:
                 predictions.append(estimator.predict_proba(X))
-        elif self.version in [5, 6]:
+        elif self.version in [5, 6, 7]:
             for model in self.model:
                 for estimator in model.estimators_:
                     predictions.append(estimator.predict_proba(X))
