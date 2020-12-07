@@ -27,6 +27,17 @@ for version in ['train', 'test']:
     
     data.columns = ['age','workclass','fnlwgt','education','education-num','marital-status','occupation','relationship','race','sex','capital-gain','capital-loss','hours-per-week','native-country','label']
     
+    # hand engineer some columns to reduce data sparsity
+    data.loc[~data['workclass'].isin(['Federal-gov', 'Local-gov', 'Private', 'Self-emp-inc']), 'workclass'] = 'No-inc'
+    data.loc[data['workclass'].isin(['Federal-gov', 'Local-gov']), 'workclass'] = 'Gov'
+    data.loc[data['workclass'].isin(['Private', 'Self-emp-inc']), 'workclass'] = 'Private'
+    data = data.drop(columns=['education']) # keep education-num
+    data.loc[data['native-country'].isin(['Cambodia', 'China', 'Hong', 'India', 'Japan', 'Philippines', 'Taiwan', 'Thailand', 'Vietnam', 'Laos', 'Iran']), 'native-country'] = 'Asia'
+    data.loc[data['native-country'].isin(['Columbia', 'Cuba', 'Dominican-Republic', 'Ecuador', 'El-Salvador', 'Guatemala', 'Honduras', 'Nicaragua', 'Haiti', 'Jamaica', 'Trinadad&Tobago', 'Peru', 'Mexico']), 'native-country'] = 'South America'
+    data.loc[data['native-country'].isin(['Canada', 'Greece', 'England', 'France', 'Germany', 'Italy', 'Holand-Netherlands', 'Ireland', 'Scotland', 'Portugal', 'Poland', 'Hungary', 'Yugoslavia']), 'native-country'] = 'Europe&Canada'
+    data.loc[data['native-country'].isin(['Puerto-Rico', 'Outlying-US(Guam-USVI-etc)']), 'native-country'] = 'US_non_state'
+    data.loc[data['race'].isin(['Amer-Indian-Eskimo', 'Asian-Pac-Islander', 'Other']), 'race'] = "Other"
+    
     label = data['label']
     for i in range(len(label)):
         if version == 'train':
@@ -48,20 +59,19 @@ for version in ['train', 'test']:
         train_data = data.copy(deep=True)
 
         data[['age','fnlwgt','education-num','capital-gain','capital-loss','hours-per-week','label'] ]=data[['age','fnlwgt','education-num','capital-gain','capital-loss','hours-per-week','label']].astype(str).astype(int)
-        data_cat = data[['workclass','education','marital-status','occupation','relationship','race','sex','native-country']]
+        data_cat = data[['workclass','marital-status','occupation','relationship','race','sex','native-country']]
         data_cat = pd.get_dummies(data_cat, drop_first=drop_first)
-        data = data.drop(['workclass','education','marital-status','occupation','relationship','race','sex','native-country'],axis=1).join(data_cat)
+        data = data.drop(['workclass','marital-status','occupation','relationship','race','sex','native-country'],axis=1).join(data_cat)
         min_max_scaler.fit(data)
     elif version == 'test':
         test_data = data.copy(deep=True)
 data = pd.concat([train_data, test_data])
 
 data[['age','fnlwgt','education-num','capital-gain','capital-loss','hours-per-week','label'] ]=data[['age','fnlwgt','education-num','capital-gain','capital-loss','hours-per-week','label']].astype(str).astype(int)
-data_cat = data[['workclass','education','marital-status','occupation','relationship','race','sex','native-country']]
+data_cat = data[['workclass','marital-status','occupation','relationship','race','sex','native-country']]
 data_cat = pd.get_dummies(data_cat, drop_first=drop_first)
-#data = data.drop(['workclass','education','marital-status','occupation','relationship','race','sex','native-country'],axis=1).join(data_cat)
-data = pd.concat([data.drop(['workclass','education','marital-status','occupation','relationship','race','sex','native-country'],axis=1), data_cat], axis=1)
-
+#data = data.drop(['workclass','marital-status','occupation','relationship','race','sex','native-country'],axis=1).join(data_cat)
+data = pd.concat([data.drop(['workclass','marital-status','occupation','relationship','race','sex','native-country'],axis=1), data_cat], axis=1)
 np_scaled = min_max_scaler.transform(data)
 data_norm= pd.DataFrame(np_scaled, columns = data.columns)
 train_data = data_norm[:30162]

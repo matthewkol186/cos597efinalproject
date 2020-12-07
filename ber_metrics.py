@@ -4,6 +4,37 @@ from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
 
 
+def remove_constant_cols(x):
+    """
+    Removes columns in the dataset that are the same for each row (i.e.,
+    add no information).
+    """
+    std = x.std(axis=0)
+    return x[:, std > 0]
+
+def log_det_svd(m, perc_energy=0.9):
+    """
+    Calculates the log of the determinant. Uses SVD to remove singular
+    values that are "irrelevant"; that is, we keep enough singular
+    values to make up 90% of the energy in sigma.
+
+    ** NOT CURRENTLY USED **
+
+    Parameters
+    ----------
+        m: numpy array
+            Matrix whose determinant is being calculated
+
+        eps: float (optional)
+            Singular values under this value will be removed
+    """
+    s = np.linalg.svd(m)[1]
+    s_sq = np.power(s, 2)
+    cumulative_energy = np.cumsum(s_sq)
+    # keep indices with
+    num_to_keep = (cumulative_energy <= perc_energy * s_sq.sum()).sum() + 1
+    return np.log(np.prod(s[:num_to_keep]))
+
 class BEREstimator:
     def __init__(self, x, y, subgroups=None):
         """
@@ -23,11 +54,11 @@ class BEREstimator:
                 String keys represent the category of subgroup (e.g., race,
                 gender, etc.)
         """
-        self.x = x
+        self.x = remove_constant_cols(x)
         self.y = y
         mu = self.x.mean(axis=0) # mean of each feature
         std = self.x.std(axis=0) # std of each feature
-        self.x = (self.x - mu) / std # standardize feature scale
+        self.x = (self.x - mu) / std # standardize feature scale, remove features with no variation
         # preprocess y labels to 0 and 1
         possible_labels = np.unique(self.y)
         if len(possible_labels) > 2:
@@ -52,11 +83,16 @@ class BEREstimator:
         mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
         sigma_0 = np.cov(self.x[self.y == 0, :].T)
         sigma_1 = np.cov(self.x[self.y == 1, :].T)
-        sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        sigma_inv = None
+        try:
+            sigma_inv = np.linalg.pinv(sigma_0 * p_0 + sigma_1 * p_1)
+        except np.linalg.LinAlgError:
+            sigma_inv = np.linalg.inv(sigma_0 * p_0 + sigma_1 * p_1)
+
         m_dist = distance.mahalanobis(mu_0, mu_1, sigma_inv) ** 2
         return 2 * p_0 * p_1 / (1 + p_0 * p_1 * m_dist)
 
-    def bhattacharyya_bound(self):
+    def bhattacharyya_bound(self, eps=1e-5):
         """
         Calculate the BER upper bound estimate using the Bhattacharrya bound
         between instances in class 0 and class 1.
@@ -68,16 +104,22 @@ class BEREstimator:
         """
         p_1 = self.y.mean()
         p_0 = 1 - p_1
-        mu_0 = self.x[self.y == 0, :].mean(axis=0)  # mean vector for class 0 instances
-        mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
-        sigma_0 = np.cov(self.x[self.y == 0, :].T)
-        sigma_1 = np.cov(self.x[self.y == 1, :].T)
+        x_0 = self.x[self.y == 0]
+        x_1 = self.x[self.y == 1]
+        assert x_0.shape[1] == x_1.shape[1]  # ensure that the same # of columns
+        mu_0 = x_0.mean(axis=0)  # mean vector for class 0 instances
+        mu_1 = x_1.mean(axis=0)  # mean vector for class 1 instances
+        sigma_0 = np.cov(x_0.T)
+        sigma_1 = np.cov(x_1.T)
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
         # rewrite to try to escape floating point errors
         second_term = 0.5 * np.linalg.slogdet(sigma)[1] # get the log of absolute value of determinant
         third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
-        return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
+        b_dist = first_term + second_term + third_term
+        lower_bound = 0.5 * (1 - np.sqrt(1 - 4 * p_0 * p_1 * np.exp(-2 * b_dist)))
+        upper_bound = np.exp(-b_dist) * np.sqrt(p_0 * p_1)
+        return lower_bound, upper_bound # for now, only interested in upper bound
 
     def nn_bound(self):
         """
@@ -87,6 +129,8 @@ class BEREstimator:
         Equations from Tumer and Ghosh (2003) and also referencing Ryan Holbrook's
         implementations at:
         https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
+
+        Returns lower and upper bound for Bayes error.
         """
         x = np.ascontiguousarray(self.x.astype('float32'))
         index = faiss.IndexFlatL2(x.shape[1])
@@ -94,8 +138,9 @@ class BEREstimator:
         _, I = index.search(x, k=2)
         closest_idx = I[:, 1].reshape(-1)
         predict_y = self.y[closest_idx]
-        err = (predict_y != self.y).sum() / len(self.y)
-        return err
+        upper_bound = (predict_y != self.y).sum() / len(self.y)
+        lower_bound = 0.5 * (1 - np.sqrt(1 - 2 * upper_bound))
+        return lower_bound, upper_bound
 
     def mi_ensemble_bound(self, individual_predictions):
         """
