@@ -115,6 +115,8 @@ class BEREstimator:
         Equations from Tumer and Ghosh (2003) and also referencing Ryan Holbrook's
         implementations at:
         https://rdrr.io/github/ryanholbrook/bayeserror/src/R/bayeserror.R
+
+        Returns lower and upper bound for Bayes error.
         """
         x = np.ascontiguousarray(self.x.astype('float32'))
         index = faiss.IndexFlatL2(x.shape[1])
@@ -122,8 +124,9 @@ class BEREstimator:
         _, I = index.search(x, k=2)
         closest_idx = I[:, 1].reshape(-1)
         predict_y = self.y[closest_idx]
-        err = (predict_y != self.y).sum() / len(self.y)
-        return err
+        upper_bound = (predict_y != self.y).sum() / len(self.y)
+        lower_bound = 0.5 * (1 - np.sqrt(1 - 2 * upper_bound))
+        return lower_bound, upper_bound
 
     def mi_ensemble_bound(self, individual_predictions):
         """
