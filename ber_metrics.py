@@ -106,6 +106,9 @@ class BEREstimator:
         p_0 = 1 - p_1
         x_0 = self.x[self.y == 0]
         x_1 = self.x[self.y == 1]
+        no_variation = np.logical_or(x_0.std(axis=0) == 0, x_1.std(axis=0) == 0)
+        x_0 = x_0[:, no_variation == False]
+        x_1 = x_1[:, no_variation == False]
         assert x_0.shape[1] == x_1.shape[1]  # ensure that the same # of columns
         mu_0 = x_0.mean(axis=0)  # mean vector for class 0 instances
         mu_1 = x_1.mean(axis=0)  # mean vector for class 1 instances
