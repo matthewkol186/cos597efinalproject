@@ -4,6 +4,14 @@ from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
 
 
+def remove_constant_cols(x):
+    """
+    Removes columns in the dataset that are the same for each row (i.e.,
+    add no information).
+    """
+    std = x.std(axis=0)
+    return x[:, std > 0]
+
 def log_det_svd(m, perc_energy=0.9):
     """
     Calculates the log of the determinant. Uses SVD to remove singular
@@ -46,11 +54,11 @@ class BEREstimator:
                 String keys represent the category of subgroup (e.g., race,
                 gender, etc.)
         """
-        self.x = x
+        self.x = remove_constant_cols(x)
         self.y = y
         mu = self.x.mean(axis=0) # mean of each feature
         std = self.x.std(axis=0) # std of each feature
-        self.x = (self.x[:, std > 0] - mu[std > 0]) / std[std > 0] # standardize feature scale, remove features with no variation
+        self.x = (self.x - mu) / std # standardize feature scale, remove features with no variation
         # preprocess y labels to 0 and 1
         possible_labels = np.unique(self.y)
         if len(possible_labels) > 2:
@@ -96,10 +104,13 @@ class BEREstimator:
         """
         p_1 = self.y.mean()
         p_0 = 1 - p_1
-        mu_0 = self.x[self.y == 0, :].mean(axis=0)  # mean vector for class 0 instances
-        mu_1 = self.x[self.y == 1, :].mean(axis=0)  # mean vector for class 1 instances
-        sigma_0 = np.cov(self.x[self.y == 0, :].T)
-        sigma_1 = np.cov(self.x[self.y == 1, :].T)
+        x_0 = self.x[self.y == 0]
+        x_1 = self.x[self.y == 1]
+        assert x_0.shape[1] == x_1.shape[1]  # ensure that the same # of columns
+        mu_0 = x_0.mean(axis=0)  # mean vector for class 0 instances
+        mu_1 = x_1.mean(axis=0)  # mean vector for class 1 instances
+        sigma_0 = np.cov(x_0.T)
+        sigma_1 = np.cov(x_1.T)
         sigma = (sigma_0 + sigma_1) / 2
         first_term = (1/8) * (mu_1 - mu_0).T @ sigma @ (mu_1 - mu_0)
         # rewrite to try to escape floating point errors
