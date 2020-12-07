@@ -116,7 +116,10 @@ class BEREstimator:
         # rewrite to try to escape floating point errors
         second_term = 0.5 * np.linalg.slogdet(sigma)[1] # get the log of absolute value of determinant
         third_term = -0.25 * (np.linalg.slogdet(sigma_0)[1] + np.linalg.slogdet(sigma_1)[1])
-        return np.exp(-first_term-second_term-third_term) * np.sqrt(p_0 * p_1) # for now, only interested in upper bound
+        b_dist = first_term + second_term + third_term
+        lower_bound = 0.5 * (1 - np.sqrt(1 - 4 * p_0 * p_1 * np.exp(-2 * b_dist)))
+        upper_bound = np.exp(-b_dist) * np.sqrt(p_0 * p_1)
+        return lower_bound, upper_bound # for now, only interested in upper bound
 
     def nn_bound(self):
         """
