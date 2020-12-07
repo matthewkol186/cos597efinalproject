@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 class Ensemble:
     def __init__(self, version, params):
         # versions: 0 = mlp bagging, 1 = random forest, 2 = logreg bagging, 3 = svm bagging, 4 = rbf bagging, 5 = ultimate with 0+1+2+3+4, 6 is 5 without 4 for speed
+        # 7 is 0+2+3, so no rf
 
         self.version = version
 
@@ -19,11 +20,11 @@ class Ensemble:
         if 'lr_num' not in params.keys():
             params['lr_num'] = 10
         if 'mlp_num' not in params.keys():
-            params['mlp_num'] = 5
+            params['mlp_num'] = 10
         if 'svm_num' not in params.keys():
-            params['svm_num'] = 3
+            params['svm_num'] = 10
         if 'rbf_num' not in params.keys():
-            params['rbf_num'] = 5
+            params['rbf_num'] = 3
         self.params = params
 
         if self.version == 0:
@@ -33,7 +34,7 @@ class Ensemble:
         elif self.version == 2:
             self.model = BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num'])
         elif self.version == 3:
-            self.model = BaggingClassifier(base_estimator=SVC(class_weight='balanced'), n_estimators=self.params['svm_num'])
+            self.model = BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num'])
         elif self.version == 4:
             kernel = 1.0 * RBF(1.0)
             self.model = BaggingClassifier(base_estimator=GaussianProcessClassifier(kernel=kernel), n_estimators=self.params['rbf_num'])
@@ -46,14 +47,19 @@ class Ensemble:
             self.model = [BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
                     RandomForestClassifier(n_estimators=self.params['rf_num'], class_weight='balanced'),
                     BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
-                    BaggingClassifier(base_estimator=SVC(class_weight='balanced'), n_estimators=self.params['svm_num']),
+                    BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num']),
                     BaggingClassifier(base_estimator=GaussianProcessClassifier(kernel=kernel), n_estimators=self.params['rbf_num'])]
             self.combiner = LogisticRegression(class_weight='balanced')
         elif self.version == 6:
             self.model = [BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
                     RandomForestClassifier(n_estimators=self.params['rf_num'], class_weight='balanced'),
                     BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
-                    BaggingClassifier(base_estimator=SVC(class_weight='balanced'), n_estimators=self.params['svm_num'])]
+                    BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num'])]
+            self.combiner = LogisticRegression(class_weight='balanced')
+        elif self.version == 7:
+            self.model = [BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
+                    BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
+                    BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num'])]
             self.combiner = LogisticRegression(class_weight='balanced')
         else:
             assert NotImplementedError
@@ -79,7 +85,7 @@ class Ensemble:
         if self.version in [0, 1, 2, 3, 4]:
             for estimator in self.model.estimators_:
                 predictions.append(estimator.predict(X))
-        elif self.version in [5]:
+        elif self.version in [5, 6]:
             for model in self.model:
                 for estimator in model.estimators_:
                     predictions.append(estimator.predict(X))

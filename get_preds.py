@@ -84,7 +84,7 @@ warnings.warn = warn
 
 print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-model = Ensemble(version=6, params={})
+model = Ensemble(version=7, params={})
 model.train(X_train, y_train)
 all_predictions = model.test(X_test)
 all_accuracies = [accuracy_score(y_test, all_predictions[:, i]) for i in range(len(all_predictions[0]))]
