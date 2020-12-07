@@ -1,4 +1,4 @@
-import faiss
+# import faiss
 import numpy as np
 from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
@@ -145,7 +145,7 @@ class BEREstimator:
         lower_bound = 0.5 * (1 - np.sqrt(1 - 2 * upper_bound))
         return lower_bound, upper_bound
 
-    def mi_ensemble_bound(self, individual_predictions):
+    def mi_ensemble_bound(self, individual_predictions, this_y=None):
         """
         Estimate the BER using the Mutual Information-Based Correlation in
         Tumer and Ghosh (2003).
@@ -158,13 +158,15 @@ class BEREstimator:
                 of individual classifiers. Each element should be a probability
                 (not a 0/1 prediction).)
         """
+        if this_y is None:
+            this_y = self.y
         avg_predictor = individual_predictions.mean(axis=1).round()
         individual_predictions = individual_predictions.round() # deal with 0/1 predictions
         N = individual_predictions.shape[1]  # number of classifiers in ensemble
-        labels = np.repeat(self.y.reshape(-1, 1), N, axis=1)
+        labels = np.repeat(this_y.reshape(-1, 1), N, axis=1)
         accs = np.equal(individual_predictions, labels).mean(axis=0) # mean accuracy for each classifier
         mean_err = 1 - accs.mean() # mean err for all classifiers
-        ensemble_err = 1 - (self.y == avg_predictor).mean() # mean err for ensemble classifier
+        ensemble_err = 1 - (this_y == avg_predictor).mean() # mean err for ensemble classifier
 
         # calculate average mutual information between each individual classifier's
         # predictions and the ensemble predictor
@@ -187,7 +189,7 @@ class BEREstimator:
         be = (N * ensemble_err - ((N - 1) * delta + 1) * mean_err ) / ((N - 1) * (1 - delta))
         return be
 
-    def plurality_ensemble_bound(self, individual_predictions, lmbda=0.3):
+    def plurality_ensemble_bound(self, individual_predictions, this_y=None, lmbda=0.3):
         """
         Estimate the BER using the Plurality Error ensemble-based method in
         Tumer and Ghosh (2003). BEWARE: this is a highly simplistic implementation
@@ -207,6 +209,8 @@ class BEREstimator:
             lmbda: float
                 Float between 0 and 1. Set to 0.3 as per Tumer and Ghosh's paper.
         """
+        if this_y is None:
+            this_y = self.y
         individual_predictions = individual_predictions.round()
         num_classifiers = individual_predictions.shape[1]
         # fraction of classifiers that "picked" the class 1
@@ -218,8 +222,25 @@ class BEREstimator:
         likely_class_exists = np.logical_or(frac_1 >= (1 - lmbda), frac_1 <= lmbda)
         # break ties randomly by adding a number between [-0.5, 0.5]
         frac_1[frac_1 == 0.5] += np.random.rand((frac_1 == 0.5).sum()) - 0.5
-        vote_correct = frac_1.round() == self.y
+        vote_correct = frac_1.round() == this_y
         num_likely_exists = likely_class_exists.sum()
         likely_correct = np.logical_and(likely_class_exists, vote_correct)
         return 1 - (likely_correct.sum() / num_likely_exists)
+
+    def bootstrap_ensemble(self, individual_predictions, ensemble_version='mi'): # ensemble_version is 'mi' or 'plurality'
+        bers = []
+        for i in range(1000):
+            n = len(individual_predictions)
+            samples = np.random.choice(np.arange(n), size=n, replace=True)
+            if ensemble_version == 'mi':
+                ber = self.mi_ensemble_bound(individual_predictions[samples], self.y[samples])
+            elif ensemble_version == 'plurality':
+                ber = self.plurality_ensemble_bound(individual_predictions[samples], self.y[samples])
+            else:
+                assert NotImplementedError
+            bers.append(ber)
+        bers = np.sort(bers)
+        #return bers
+        return bers[49], bers[949] # 5% and 95% confidence intervals
+
 

@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 if args.dataset == 'adult':
     X_train, y_train, X_test, y_test = pickle.load(open('Data/adult_income/processed_data.pkl', 'rb'))
-    protected_labels = ['race_Amer-Indian-Eskimo', 'race_Asian-Pac-Islander', 'race_Black', 'race_Other', 'race_White', 'sex_Male', 'sex_Female']
+    protected_labels = ['race_Black', 'race_Other', 'race_White', 'sex_Male', 'sex_Female']
 elif args.dataset == 'compas-arrest':
     X_train, y_train, X_test, y_test = pickle.load(open('Data/compas/processed_arrest.pkl', 'rb'))
     protected_labels = ['race_is_causasian', 'race_is_african_american', 'race_is_hispanic', 'race_is_other', 'female']
