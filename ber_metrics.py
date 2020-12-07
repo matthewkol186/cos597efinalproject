@@ -1,4 +1,4 @@
-import faiss
+# import faiss
 import numpy as np
 from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
@@ -219,4 +219,20 @@ class BEREstimator:
         num_likely_exists = likely_class_exists.sum()
         likely_correct = np.logical_and(likely_class_exists, vote_correct)
         return 1 - (likely_correct.sum() / num_likely_exists)
+
+    def bootstrap_ensemble(self, individual_predictions, ensemble_version='mi'): # ensemble_version is 'mi' or 'plurality'
+        bers = []
+        for i in range(1000):
+            n = len(individual_predictions)
+            samples = np.random.choice(np.arange(n), size=n, replace=True)
+            if ensemble_version == 'mi':
+                ber = self.mi_ensemble_bound(individual_predictions[samples])
+            elif ensemble_version == 'plurality':
+                ber = self.pluruality_ensemble_bound(individual_predictions[samples])
+            else:
+                assert NotImplementedError
+            bers.append(ber)
+        bers = np.sort(bers)
+        return bers[49], bers[949] # 5% and 95% confidence intervals
+
 
