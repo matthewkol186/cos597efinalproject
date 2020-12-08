@@ -232,7 +232,7 @@ class BEREstimator:
 
     def bootstrap_ensemble(self, individual_predictions, ensemble_version='mi'): # ensemble_version is 'mi' or 'plurality'
         bers = []
-        for i in range(1000):
+        for i in range(100):
             n = len(individual_predictions)
             samples = np.random.choice(np.arange(n), size=n, replace=True)
             if ensemble_version == 'mi':
@@ -243,6 +243,8 @@ class BEREstimator:
                 assert NotImplementedError
             bers.append(ber)
         bers = np.sort(bers)
-        return bers[49], bers[949] # 5% and 95% confidence intervals
+        #return bers
+        #return bers[49], bers[949] # 5% and 95% confidence intervals
+        return bers[4], bers[94] # 5% and 95% confidence intervals
 
 
