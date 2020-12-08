@@ -32,7 +32,7 @@ parser.add_argument(
 parser.add_argument(
     "--minority",
     type=str,
-    default="black",
+    default=None,
     help="if set, will look at minority group rather than majority (black/hispanic/asian/female)",
 )
 args = parser.parse_args()
@@ -221,18 +221,17 @@ elif args.row == 4:
             )
         elif args.dataset == "mimic":
             X_train, y_train = (
-                X_train[X_train["IS_SEX_MALE"] == 1],
-                y_train[X_train["IS_SEX_MALE"] == 1],
+                X_train[X_train["IS_SEX_M"] == 1],
+                y_train[X_train["IS_SEX_M"] == 1],
             )
             X_test, y_test = (
-                X_test[X_test["IS_SEX_MALE"] == 1],
-                y_test[X_test["IS_SEX_MALE"] == 1],
+                X_test[X_test["IS_SEX_M"] == 1],
+                y_test[X_test["IS_SEX_M"] == 1],
             )
     X_train = X_train.drop(labels=protected_labels, axis=1)
     X_test = X_test.drop(labels=protected_labels, axis=1)
 
 print(X_test.shape)
-exit()
 
 
 def warn(*args, **kwargs):
