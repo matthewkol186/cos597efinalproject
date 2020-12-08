@@ -145,7 +145,7 @@ class BEREstimator:
         lower_bound = 0.5 * (1 - np.sqrt(1 - 2 * upper_bound))
         return lower_bound, upper_bound
 
-    def mi_ensemble_bound(self, individual_predictions, this_y=None):
+    def mi_ensemble_bound(self, individual_predictions, this_y=None, ensemble_predictions=None):
         """
         Estimate the BER using the Mutual Information-Based Correlation in
         Tumer and Ghosh (2003).
@@ -160,7 +160,10 @@ class BEREstimator:
         """
         if this_y is None:
             this_y = self.y
-        avg_predictor = individual_predictions.mean(axis=1).round()
+        if ensemble_predictions is None:
+            avg_predictor = individual_predictions.mean(axis=1).round()
+        else:
+            avg_predictor = ensemble_predictions.round()
         individual_predictions = individual_predictions.round() # deal with 0/1 predictions
         N = individual_predictions.shape[1]  # number of classifiers in ensemble
         labels = np.repeat(this_y.reshape(-1, 1), N, axis=1)
