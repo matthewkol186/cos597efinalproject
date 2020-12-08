@@ -88,12 +88,12 @@ model = Ensemble(version=7, params={})
 model.train(X_train, y_train)
 all_predictions = model.test(X_test)
 all_accuracies = [accuracy_score(y_test, all_predictions[:, i]) for i in range(len(all_predictions[0]))]
-each_predictions, agg_predictions = model.test_agg(X_test, disagg=True)
+#each_predictions, agg_predictions = model.test_agg(X_test, disagg=True)
 probabilities = model.test_proba(X_test)
 if args.row in [3, 4]:
-    pickle.dump([all_predictions, all_accuracies, each_predictions, agg_predictions, probabilities], open('results/{0}_row{1}_{2}.pkl'.format(args.dataset, args.row, 'min' if args.minority else 'maj'), 'wb'))
+    pickle.dump([all_predictions, all_accuracies, probabilities], open('results/{0}_row{1}_{2}.pkl'.format(args.dataset, args.row, 'min' if args.minority else 'maj'), 'wb'))
 else:
-    pickle.dump([all_predictions, all_accuracies, each_predictions, agg_predictions, probabilities], open('results/{0}_row{1}.pkl'.format(args.dataset, args.row), 'wb'))
+    pickle.dump([all_predictions, all_accuracies, probabilities], open('results/{0}_row{1}.pkl'.format(args.dataset, args.row), 'wb'))
 
 
 
