@@ -33,7 +33,8 @@ for group in ['All', 'Female', 'Male', 'Black', 'White']:
     plurs = [measure[1] for measure in measures]
     errs = [measure[2] for measure in measures]
     if group in ['All', 'Female', 'Black']:
-        fig = plt.figure(figsize=(3.5, 5))
+        #fig = plt.figure(figsize=(3.5, 5))
+        fig = plt.figure(figsize=(5.5, 2.5))
     for i, mi in enumerate(mis):
         if i == 0:
             c = 'C0'
@@ -54,20 +55,24 @@ for group in ['All', 'Female', 'Male', 'Black', 'White']:
             #continue
         linestyle='solid'
         if group == 'Male' or group == 'White':
-            linestyle='dashed'
+            linestyle='dotted'
             plt.plot([.4+i*.1, .4+i*.1], mi, c=c, linestyle=linestyle)
+            plt.hlines(mi, (.4+i*.1)- 0.04, (.4+i*.1) + 0.04, colors=c)
         elif group == 'Female' or group == 'Black':
             plt.plot([i*.1, i*.1], mi, c=c, linestyle=linestyle, label=l)
+            plt.hlines(mi, (i*.1)- 0.04, (i*.1) + 0.04, colors=c)
         else:
             plt.plot([i*.1, i*.1], mi, c=c, label=l, linestyle=linestyle)
+            plt.hlines(mi, (i*.1)- 0.04, (i*.1) + 0.04, colors=c)
     for i, plur in enumerate(plurs):
         c = 'C{}'.format(i)
         linestyle='solid'
         add = 0
         if group == 'Male' or group == 'White':
-            linestyle='dashed'
+            linestyle='dotted'
             add = .4
         plt.plot([add+1.+i*.1, add+1.+i*.1], plur, c=c, linestyle=linestyle)
+        plt.hlines(plur, (add+1.+i*.1)- 0.04, (add+1.+i*.1) + 0.04, colors=c)
     for i, err in enumerate(errs):
         c = 'C{}'.format(i)
         marker = 'o'
@@ -79,13 +84,20 @@ for group in ['All', 'Female', 'Male', 'Black', 'White']:
     if group == 'Male' or group == 'White' or group == 'All':
         if group == 'Male':
             title = 'Sex'
+            plt.plot([0], [0], c='k', linestyle='solid', label='Female')
+            plt.plot([0], [0], c='k', linestyle='dotted', label='Male')
         elif group == 'White':
             title = 'Race'
+            plt.plot([0], [0], c='k', linestyle='solid', label='Black')
+            plt.plot([0], [0], c='k', linestyle='dotted', label='White')
+            plt.plot([.8, .8], [0, .45], c='k')
+            plt.plot([1.8, 1.8], [0, .45], c='k')
+            plt.plot([2.8, 2.8], [0, .45], c='k')
         elif group == 'All':
             title = 'All'
         plt.title(title)
-        plt.xticks([0, 1, 2], ['MI\nEnsemble', 'Plurality\nEnsemble', 'Classification\nError'])
-        plt.legend()
+        plt.xticks([0.35, 1.35, 2.35], ['MI\nEnsemble', 'Plurality\nEnsemble', 'Classification\nError'])
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         plt.savefig('images/{}.png'.format(title), dpi=300)
         plt.close()
