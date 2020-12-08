@@ -26,12 +26,14 @@ for i, row in enumerate(read_tsv):
     
     group_to_measure[group].append([mi, plur, float(ens_err)])
 
-for group in group_to_measure.keys():
+#for group in group_to_measure.keys():
+for group in ['All', 'Female', 'Male', 'Black', 'White']:
     measures = group_to_measure[group]
     mis = [measure[0] for measure in measures]
     plurs = [measure[1] for measure in measures]
     errs = [measure[2] for measure in measures]
-    fig = plt.figure(figsize=(3.5, 5))
+    if group in ['All', 'Female', 'Black']:
+        fig = plt.figure(figsize=(3.5, 5))
     for i, mi in enumerate(mis):
         if i == 0:
             c = 'C0'
@@ -50,16 +52,40 @@ for group in group_to_measure.keys():
             l = 'Decoupled - Sex'
             #plt.plot([i*.1, i*.1], mi, c)
             #continue
-        plt.plot([i*.1, i*.1], mi, c=c, label=l)
+        linestyle='solid'
+        if group == 'Male' or group == 'White':
+            linestyle='dashed'
+            plt.plot([.4+i*.1, .4+i*.1], mi, c=c, linestyle=linestyle)
+        elif group == 'Female' or group == 'Black':
+            plt.plot([i*.1, i*.1], mi, c=c, linestyle=linestyle, label=l)
+        else:
+            plt.plot([i*.1, i*.1], mi, c=c, label=l, linestyle=linestyle)
     for i, plur in enumerate(plurs):
         c = 'C{}'.format(i)
-        plt.plot([1.+i*.1, 1.+i*.1], plur, c=c)
+        linestyle='solid'
+        add = 0
+        if group == 'Male' or group == 'White':
+            linestyle='dashed'
+            add = .4
+        plt.plot([add+1.+i*.1, add+1.+i*.1], plur, c=c, linestyle=linestyle)
     for i, err in enumerate(errs):
         c = 'C{}'.format(i)
-        plt.scatter([2.+i*.1], [err], c=c)
-    plt.xticks([0, 1, 2], ['MI\nEnsemble', 'Plurality\nEnsemble', 'Classification\nError'])
-    plt.legend()
-    plt.title(group)
-    plt.tight_layout()
-    plt.savefig('images/{}.png'.format(group), dpi=300)
-    plt.close()
+        marker = 'o'
+        add = 0
+        if group == 'Male' or group == 'White':
+            marker = 'x'
+            add = .4
+        plt.scatter([add+2.+i*.1], [err], c=c, marker=marker)
+    if group == 'Male' or group == 'White' or group == 'All':
+        if group == 'Male':
+            title = 'Sex'
+        elif group == 'White':
+            title = 'Race'
+        elif group == 'All':
+            title = 'All'
+        plt.title(title)
+        plt.xticks([0, 1, 2], ['MI\nEnsemble', 'Plurality\nEnsemble', 'Classification\nError'])
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig('images/{}.png'.format(title), dpi=300)
+        plt.close()
