@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-folder = 'cv'
+folder = 'mimic'
 tsv_file = open("{}_decouple.tsv".format(folder))
 read_tsv = csv.reader(tsv_file, delimiter="\t")
 
