@@ -7,12 +7,11 @@ parser = argparse.ArgumentParser(description='diagnosing some errors')
 parser.add_argument('--dataset', type=str, default='adult', help='adult or compas-arrest or compas-violent')
 args = parser.parse_args()
 
+print(args)
+
 for row in ['row1', 'row2', 'row3_min', 'row3_maj', 'row4_min', 'row4_maj']:
 
-    if 'compas' in args.dataset:
-        all_predictions, all_accuracies, each_predictions, agg_predictions, probabilities = pickle.load(open('results/{0}_{1}.pkl'.format(args.dataset, row), 'rb'))
-    else:
-        all_predictions, all_accuracies, each_predictions, agg_predictions, probabilities = pickle.load(open('results/{}.pkl'.format(row), 'rb'))
+    all_predictions, all_accuracies, probabilities = pickle.load(open('results/{0}_{1}.pkl'.format(args.dataset, row), 'rb'))
     if args.dataset == 'adult':
         X_train, y_train, X_test, y_test = pickle.load(open('Data/adult_income/processed_data.pkl', 'rb'))
     elif args.dataset == 'compas-arrest':
@@ -56,8 +55,18 @@ for row in ['row1', 'row2', 'row3_min', 'row3_maj', 'row4_min', 'row4_maj']:
     adult_estimator = BEREstimator(X_test, y_test)
 
     probabilities = probabilities[1]
-    plur_ber = adult_estimator.plurality_ensemble_bound(probabilities)
-    mi_ber = adult_estimator.mi_ensemble_bound(probabilities)
+
+    agg_predictions = probabilities.mean(axis=1).round()
+    plur_ber = adult_estimator.bootstrap_ensemble(probabilities, ensemble_version='plurality')
+    #plur_ber = 1
+    mi_ber = adult_estimator.bootstrap_ensemble(probabilities, ensemble_version='mi')
+
+    
+    acc = np.mean(np.equal(agg_predictions, y_test))
+    #plur_ber = adult_estimator.plurality_ensemble_bound(probabilities)
+    #mi_ber = adult_estimator.mi_ensemble_bound(probabilities, this_y=y_test, ensemble_predictions=agg_predictions)
 
     print("{0} has BER: plur = {1}, mi = {2}".format(row, plur_ber, mi_ber))
+    #print(row)
+    print("Classification Error: {}".format(1.-acc))
                     

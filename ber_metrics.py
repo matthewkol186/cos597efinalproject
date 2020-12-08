@@ -236,14 +236,13 @@ class BEREstimator:
             n = len(individual_predictions)
             samples = np.random.choice(np.arange(n), size=n, replace=True)
             if ensemble_version == 'mi':
-                ber = self.mi_ensemble_bound(individual_predictions[samples], self.y[samples])
+                ber = self.mi_ensemble_bound(individual_predictions[samples], this_y=self.y[samples])
             elif ensemble_version == 'plurality':
                 ber = self.plurality_ensemble_bound(individual_predictions[samples], self.y[samples])
             else:
                 assert NotImplementedError
             bers.append(ber)
         bers = np.sort(bers)
-        #return bers
         return bers[49], bers[949] # 5% and 95% confidence intervals
 
 

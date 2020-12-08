@@ -49,33 +49,28 @@ class Ensemble:
                     BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
                     BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num']),
                     BaggingClassifier(base_estimator=GaussianProcessClassifier(kernel=kernel), n_estimators=self.params['rbf_num'])]
-            self.combiner = LogisticRegression(class_weight='balanced')
+            #self.combiner = LogisticRegression(class_weight='balanced')
         elif self.version == 6:
             self.model = [BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
                     RandomForestClassifier(n_estimators=self.params['rf_num'], class_weight='balanced'),
                     BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
                     BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num'])]
-            self.combiner = LogisticRegression(class_weight='balanced')
+            #self.combiner = LogisticRegression(class_weight='balanced')
         elif self.version == 7:
             self.model = [BaggingClassifier(base_estimator=MLPClassifier(max_iter=300), n_estimators=self.params['mlp_num']), 
                     BaggingClassifier(base_estimator=LogisticRegression(class_weight='balanced'), n_estimators=self.params['lr_num']),
                     BaggingClassifier(base_estimator=SVC(class_weight='balanced', probability=True), n_estimators=self.params['svm_num'])]
-            self.combiner = LogisticRegression(class_weight='balanced')
+            #self.combiner = LogisticRegression(class_weight='balanced')
         else:
             assert NotImplementedError
 
     def train(self, X, y):
         if self.version in [5, 6, 7]:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.33)
+            #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.33)
 
             for i, model in enumerate(self.model):
-                model.fit(X_train, y_train)
+                model.fit(X, y)
                 print("Fitted model type {0} of {1}".format(i, len(self.model)))
-            predictions = []
-            for i, model in enumerate(self.model):
-                predictions.append(model.predict(X_test))
-
-            self.combiner.fit(np.array(predictions).T, y_test)
         elif self.version in [0, 1, 2, 3, 4]:
             self.model.fit(X, y)
 
