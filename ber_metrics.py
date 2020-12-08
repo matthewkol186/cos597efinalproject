@@ -1,4 +1,4 @@
-# import faiss
+import faiss
 import numpy as np
 from scipy.spatial import distance, KDTree
 from pyitlib import discrete_random_variable as drv
