@@ -1,0 +1,7 @@
+Group,,Mahalanobis,Bhattacharyya,Nearest Neighbor,MI Ensemble,Plurality Ensemble,Ensemble Classification Error,# of Estimates with Non-Overlapping BER Bounds Between Subgroups
+All (with protected attributes as input features),,"(0, 0.42)",,"(0.32, 0.44)","(.3189, .3567)","(.3047, .3372)",0.3397,
+All,,"(0, 0.43)",,"(0.28, 0.41)","(.3061, .3451)","(.3009, .3381)",0.3348,
+By race,Black,"(0, 0.43)","(0.0018, 0.043)","(0.40, 0.48)","(.3174, .3707)","(.3230, .3679)",0.3459,0
+,White,"(0, 0.42)",,"(0.29, 0.41)","(.2745, .3392)","(.2689, .3315)",0.3177,
+By sex,Female,"(0, 0.39)",,"(0.25, 0.38)","(.2590, .3338)","(.2714, .3652)",0.304,0
+,Male,"(0, 0.43)",,"(0.34, 0.45)","(.3119, .3493)","(.3120, .3478)",0.3344,
